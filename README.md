@@ -3,7 +3,7 @@ Control [WiZ](https://www.wizconnected.com/en-us/products/bulbs) smart light bul
 
 # Dependencies
 - sh-compatible shell (e.g BASH)
-- [Netcat](https://netcat.sourceforge.net/)
+- [Nmap](https://nmap.org/)
 
 Before using this script, you need to first connect the light bulb to an accessible network connection. Also, you must know the IP address assigned to your light bulb. You can find it on your router's settings page or through the official WiZ application (some have mentioned, but I personally couldn't find it there).
 # Install
