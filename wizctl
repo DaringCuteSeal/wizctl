@@ -1,0 +1,57 @@
+#!/bin/sh
+# Dependencies: sh-compatible shell (e.g BASH), netcat
+CONFIG_DIR="${XDG_CONFIG_DIR:-$HOME/.config}"
+WIZ_IPFILE="${WIZ_IPFILE:-$CONFIG_DIR/wiz_ip}"
+
+die(){
+	usage
+	exit $1
+}
+usage(){
+	PROGNAME="${0##*/}"
+	echo "Usage: $PROGNAME <options>"
+	echo "$PROGNAME [-a <IP ADDRESS>] [-t <TEMP>] [-d <DIMMING>] [-s <on|off>]"
+}
+
+toggle(){
+	state="$1"
+	case "$state" in
+		"on") command='{"id":1,"method":"setState","params":{"state":true}}';;
+		"off") command='{"id":1,"method":"setState","params":{"state":false}}';;
+		*) die 2;;
+	esac
+
+	echo "$command" | ncat -u -w 1 $IP 38899
+
+}
+
+modify(){
+	dimming="$1"
+	temp="$2"
+
+	[[ -n "$dimming" ]] && cmd=("\"dimming\":$dimming")
+	[[ -n "$temp" ]] && cmd+=("\"temp\":$temp")
+	IFS=","
+	params="{${cmd[*]}}"
+	ncat -u -w 1 $IP 38899 << EOF
+{"id":1,"method":"setPilot","params":$params}
+EOF
+}
+
+[[ "$#" -eq 0 ]] && die 2
+
+while getopts "ht:d:s:a:" opt
+do
+	case "$opt" in
+		h) die 0;;
+		t) TEMP="$OPTARG" ;;
+		d) DIMMING="$OPTARG" ;;
+		s) STATE="$OPTARG" ;;
+		a) IP="$OPTARG" ;;
+		*) die 2;;
+	esac
+done
+
+[[ -z "$IP" ]] && IP="$(<$WIZ_IPFILE)" || echo "$IP" > $WIZ_IPFILE
+[[ -n "$DIMMING" || -n "$TEMP" ]] && modify "$DIMMING" "$TEMP"
+[[ -n "$STATE" ]] && toggle "$STATE" && exit 0
